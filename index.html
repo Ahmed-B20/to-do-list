@@ -1,0 +1,251 @@
+<script src="js/vue.js"></script>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/font-awesome.css">
+
+<!-- start app -->
+<section class="todoapp">
+    <header class="header">
+        <h1>start now</h1>
+
+        <div class="up">
+            <input class="new-todo" autocomplete="off" placeholder="what needs to done?" v-model='newTodo'
+                @keyup.enter='addTodo'>
+
+            <button class="clear" @click='clearAll()'>clear all</button>
+        </div>
+    </header>
+
+    <section class="main">
+        <input class="toggle-all" id="toggle-all" type="checkbox" v-model='allDone'>
+        <label for="toggle-all">Mark all as complete</label>
+        <!-- class="fas fa-greater-than" -->
+        <ul class="todo-list">
+            <li class="todo" v-for='todo in filteredTodo'
+                :class='{completed:todo.completed, editing:todo==editingTodo}'>
+                <div class="view">
+                    <input type="checkbox" class="toggle" v-model='todo.completed' @click='show(todo)'>
+                    <label @dblclick='editTodo(todo)'>{{todo.title}}</label>
+                    <button class="destroy fas fa-times" @click='deleteTodo(todo)'></button>
+                </div>
+                <input type="text" class="edit" v-model='todo.title' @keyup.enter='doneEditing()'
+                    @keyup.esc='cancelEditing()'>
+            </li>
+        </ul>
+
+        <p class="nots">{{notes}} <br>
+            <button class="clear" :class='{sh:state}' @click='deleteAll()'>yes</button>
+            <button class="clear" :class='{sh:state}' @click='cancel()'>no</button>
+        </p>
+    </section>
+
+    <footer class="footer">
+        <span class="todo-count">
+            <strong>{{remandingTodos}}</strong> {{remandingText}}
+        </span>
+
+        <ul class="filters">
+            <li><a href="#" @click.prevent=' visibility="all" , notes="all tack"'
+                    :class="{selected:visibility==' all'}">All</a>
+            </li>
+            <li><a href="#" @click.prevent='visibility = "active", notes="all active tack"'
+                    :class="{selected:visibility=='active'}">active</a>
+            </li>
+            <li><a href="#" @click.prevent='visibility = "completed", notes="all completed tack"'
+                    :class="{selected:visibility=='completed'}">completed</a></li>
+        </ul>
+
+        <button class="clear-completed" @click='clearCompleted'>clear completed</button>
+    </footer>
+</section>
+
+<footer class="info">
+    <p>Double-click to edit a todo</p>
+    <p>Written by <a href="https://github.com/Ahmed-banawi">Ahmed Mamdouh</a></p>
+    <p>All Right Reserved!</p>
+</footer>
+<!-- end app -->
+
+<!-- start vue code -->
+<script>
+    let filters = {
+        'all': function (todos) {
+            return todos;
+        },
+        'active': function (todos) {
+            return todos.filter((todo) => {
+                return !todo.completed;
+            });
+        },
+        'completed': function (todos) {
+            return todos.filter((todo) => {
+                return todo.completed;
+            });
+        }
+    };
+
+    let todosStorage = {
+        fetch: function () {
+            let todos = JSON.parse(localStorage.getItem('todos') || '[{title:"test", completed: false}]');
+            return todos;
+        },
+
+        save: function (todos) {
+            localStorage.setItem('todos', JSON.stringify(todos));
+        }
+    }
+
+    new Vue({
+        'el': '.todoapp',
+        'data': {
+            oldTitle: null,
+            toggle: false,
+            notes: 'ready to add task to the list',
+            newTodo: '',
+            editingTodo: null,
+            visibility: 'all',
+            todos: todosStorage.fetch(),
+            completed: true,
+            sure: false,
+            state: true,
+        },
+        'methods': {
+            deleteTodo: function (todo) {
+                if (this.todos.length == 1) {
+                    this.todos.splice(this.todos.indexOf(todo), 1)
+                    return this.notes = 'there is no tacks in list';
+                } else {
+                    this.todos.splice(this.todos.indexOf(todo), 1)
+                    return this.notes = 'the tack has been deleted';
+                }
+            },
+
+            addTodo: function () {
+                if (this.newTodo == '') {
+                    return this.notes = 'please write a task for added to the list';
+                } else {
+                    this.todos.push({ 'title': this.newTodo, 'completed': false });
+                    this.newTodo = '';
+                    return this.notes = 'the task added to list';
+                }
+            },
+
+            clearCompleted: function () {
+                this.todos = filters.active(this.todos);
+            },
+
+            editTodo: function (e) {
+                this.editingTodo = e;
+                this.oldTitle = e.title;
+                return this.notes = 'you are now editing the task';
+            },
+
+            doneEditing: function () {
+                if (this.editingTodo.title == '') {
+                    this.deleteTodo(this.editingTodo)
+                    return this.notes = 'tack was deleted'
+                }
+                this.editingTodo = null;
+                return this.notes = 'done modifying'
+            },
+
+            cancelEditing: function () {
+                this.editingTodo.title = this.oldTitle;
+                this.editingTodo = null;
+                return this.notes = 'you have canceled modifying process';
+            },
+
+            show: function (todo) {
+                if (!todo.completed) {
+                    this.notes = 'the task has been completed';
+                    todo.completed = !this.todos.completed
+                    console.log(todo.completed)
+                } else {
+                    this.notes = 'the task has not been completed';
+                    todo.completed = !this.todos.completed
+                    console.log(todo.completed)
+                }
+            },
+            clearAll: function () {
+                if (this.todos.length >= 1) {
+                    this.notes = 'warning you will delete all tasks are you sure';
+                    this.state = !this.state;
+                } else {
+                    this.notes = 'there is no tasks in list'
+                }
+            },
+
+            deleteAll: function () {
+                this.todos.splice(0, this.todos.length);
+                this.notes = 'you are deleted all tasks';
+                this.state = !this.state;
+            },
+
+            cancel: function () {
+                this.notes = 'you are cancel deleting tasks';
+                this.state = !this.state;
+            }
+        },
+        'computed': {
+            filteredTodo: function () {
+                return filters[this.visibility](this.todos)
+            },
+
+            remandingTodos: function () {
+                if (filters.active(this.todos).length >= 1) {
+                    return filters.active(this.todos).length;
+                }
+            },
+
+            remandingTodo: function () {
+                return filters.active(this.todos).length;
+            },
+
+            remandingText: function () {
+                if (filters.active(this.todos).length > 1) {
+                    return 'tasks left'
+                } else if (filters.active(this.todos).length == 0) {
+                    return 'there is no tasks left'
+                } else {
+                    return 'task left'
+                }
+            },
+
+            allDone: {
+                get: function () {
+                    return this.remandingTodo === 0
+                },
+                set: function (value) {
+                    this.todos.forEach((e) => {
+                        e.completed = value;
+                    })
+                    if (value == true) {
+                        if (this.todos.length >= 1) {
+                            return this.notes = 'all tasks are complete';
+                        } else {
+                            return this.notes = 'there is no tasks in list';
+                        }
+                    } else {
+                        if (this.todos.length >= 1) {
+                            return this.notes = 'all tasks are not complete';
+                        } else {
+                            return this.notes = 'there is no tasks in list';
+                        }
+                    }
+                }
+            },
+        },
+        'watch': {
+            todos: {
+                handler: function (todos) {
+                    todosStorage.save(todos);
+                },
+                deep: true
+            }
+            // عشان يعمل مراقبه للخواص بتاعت عناصر المصفوفه مش العناصر بس
+        }
+    })
+</script>
+<!-- end vue code -->
