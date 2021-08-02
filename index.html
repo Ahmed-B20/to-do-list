@@ -88,7 +88,7 @@
 
     let todosStorage = {
         fetch: function () {
-            let todos = JSON.parse(localStorage.getItem('todos') || '[{title:"test", completed: false}]');
+            let todos = JSON.parse(localStorage.getItem('todos') || '[]');
             return todos;
         },
 
